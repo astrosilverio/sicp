@@ -208,8 +208,8 @@
 
 (define (length items)
   (define (length-iter a count)
-    (if (null? a)
-        count
+    (if (not (pair? a))
+        (+ 1 count)
         (length-iter (cdr a) (+ 1 count))))
   (length-iter items 0))
 
@@ -228,13 +228,16 @@
                         (flatten (cdr x))))))
 
 (define (reverse items)
-  (if (= (length items) 2)
-      (append (flatten (list (cdr items))) (list (car items)))
-      (append (reverse (cdr items)) (list (car items)))))
+  (if (null? items)
+      '()
+      (if (not (pair? items))
+          items
+          (append (reverse (cdr items)) (list (car items))))))
+      
        
 (reverse (list 1 2 3 4))
 
-(last-pair (list 1 2 3 4))
+;(last-pair (list 1 2 3 4))
 (last (list 1 2 3 4))
 
 (define (first-denomination kinds-of-coins)
@@ -267,10 +270,10 @@
 
 (same-parity 6 1 2 3 4 5 6 7 8)
 
-(define (map proc items)
-  (if (null? items)
-      '()
-      (cons (proc (car items)) (map proc (cdr items)))))
+;(define (map proc items)
+ ; (if (null? items)
+ ;     '()
+  ;    (cons (proc (car items)) (map proc (cdr items)))))
 
 (map (lambda (x) (* x x)) (list 1 2 3 4 5))
 
@@ -288,6 +291,14 @@
 (define (square x)
   (* x x))
 
+(define (square-list-iter-backwards items)
+  (define (iter things answer)
+    (if (null? things)
+        answer
+        (iter (cdr things)
+              (cons (square (car things)) answer))))
+  (iter items '()))
+
 (define (square-list-iter items)
   (define (iter things answer)
     (if (null? things)
@@ -296,17 +307,219 @@
               (cons answer (square (car things))))))
   (iter items '()))
 
+(define dotted (cons 3 4))
+;(cdr (cdr dotted))
+(cdr (cdr (list 3 4)))
+    
+
+(square-list-iter-backwards (list 1 2 3 4 5))
 (square-list-iter (list 1 2 3 4 5))
 
 (define (for-each proc list)
-  (define (do proc list)
-    (proc (car list))
-    (if (= (length list) 1)
-        '()
-        (do proc (cdr list))))
-  (if (null? list)
-      '()
-     (do proc list)))
+  (if (null? (cdr list))
+      (proc (car list))
+      (and (proc (car list)) (for-each proc (cdr list)))))
 
-(for-each (lambda (x) (newline) (display x)) (list 35 98 447))
+(define (for-each-two proc list)
+  (cond ((not (null? list)) (proc (car list))
+                            (for-each-two proc (cdr list)))))
+
+(for-each-two (lambda (x) (newline) (display x)) (list 35 98 447))
     
+(list 1 (list 2 (list 3 4)))
+
+(define twotwofiveone (list 1 3 (list 5 7) 9))
+(car (cdr (car (cdr (cdr twotwofiveone)))))
+(define twotwofivetwo (list (list 7)))
+(car (car twotwofivetwo))
+(define twotwofivethree (list 1 (list 2 (list 3 (list 4 (list 5 (list 6 7)))))))
+(car (cdr (car (cdr (car (cdr (car (cdr (car (cdr (car (cdr twotwofivethree))))))))))))
+
+(define sixx (list 1 2 3))
+(define sixy (list 4 5 6))
+
+(append sixx sixy)
+(cons sixx sixy)
+(list sixx sixy)
+
+(define (deep-reverse items)
+  (if (null? (cdr items))
+      (list (reverse (car items)))
+      (if (pair? (car items))
+          (append (deep-reverse (cdr items)) (list (deep-reverse (car items))))
+          (append (deep-reverse (cdr items)) (list (car items))))))
+
+
+(define test-list (list (list 1 2) (list 3 4)))
+(deep-reverse (list (list 1 2) (list 3 4) 5))
+test-list
+(reverse test-list)
+(deep-reverse test-list)
+
+(define (fringe items)
+  (if (null? items)
+      '()
+      (if (not (pair? items))
+          (list items)
+          (append (fringe (car items)) (fringe (cdr items))))))
+
+(fringe (list test-list test-list))
+
+(define (left-branch struct)
+  (car struct))
+(define (right-branch struct)
+  (car (cdr struct)))
+(define (branch-length struct)
+  (car struct))
+(define (branch-struct struct)
+  (car (cdr struct)))
+(define (make-mobile left right)
+  (list left right))
+(define (make-branch length structure)
+  (list length structure))
+
+(define test-mobile (make-mobile (make-branch 10 (make-mobile (make-branch 10 10) (make-branch 10 3))) (make-branch 4 50)))
+
+(define (branch-weight branch)
+  (if (pair? (branch-struct branch))
+      (total-weight (branch-struct branch))
+      (branch-struct branch)))
+
+(define (total-weight mobile)
+  (+ (branch-weight (left-branch mobile))
+     (branch-weight (right-branch mobile))))
+
+(total-weight test-mobile)
+
+(define (torque branch)
+  (* (branch-length branch) (total-weight branch)))
+
+(define (balanced? mobile)
+  (and (= (torque (left-branch mobile)) (torque (right-branch mobile)))
+      true
+      false))
+
+(define (square-tree  tree)
+  (cond ((null? tree) '())
+        ((not (pair? tree)) (* tree tree))
+        (else (cons (square-tree (car tree)) (square-tree (cdr tree))))))
+
+(square-tree (list 1 (list 2 (list 3 4) 5) (list 6 7)))
+
+(define (map-square-tree tree)
+  (map (lambda (sub-tree)
+         (if (pair? sub-tree)
+             (map-square-tree sub-tree)
+             (* sub-tree sub-tree)))
+       tree))
+
+(define (tree-map proc tree)
+  (cond ((null? tree) '())
+        ((not (pair? tree)) (proc tree))
+        (else (cons (tree-map proc (car tree)) (tree-map proc (cdr tree))))))
+
+(map-square-tree (list 1 (list 2 (list 3 4) 5) (list 6 7)))
+(tree-map square (list 1 (list 2 (list 3 4) 5) (list 6 7)))
+
+(define (subsets s)
+  (if (null? s)
+      (list '())
+      (let ((rest (subsets (cdr s))))
+        (append rest (map (lambda (x) (cons (car s) x)) rest)))))
+
+(subsets (list 1 2 3))
+
+(define (filter predicate sequence)
+  (cond ((null? sequence) '())
+        ((predicate (car sequence))
+         (cons (car sequence)
+               (filter predicate (cdr sequence))))
+        (else (filter predicate (cdr sequence)))))
+
+(define (accumulate op initial sequence)
+  (if (null? sequence)
+      initial
+      (op (car sequence)
+          (accumulate op initial (cdr sequence)))))
+
+(define (acc-map proc sequence)
+  (accumulate (lambda (x y) (cons (proc x) y)) '() sequence))
+
+(define (acc-app seq1 seq2)
+  (accumulate cons seq2 seq1))
+
+(define (acc-length sequence)
+  (accumulate (lambda (x y) (+ (length x) y)) 0 sequence))
+
+(define (horner-eval x coefficient-sequence)
+  (accumulate (lambda (this-coeff higher-terms) (+ (* x higher-terms) this-coeff)) 0 coefficient-sequence))
+
+(horner-eval 2 (list 1 3 0 5 0 1))
+
+(define (enumerate-tree tree)
+  (cond ((null? tree) '())
+        ((not (pair? tree)) (list tree))
+        (else (append (enumerate-tree (car tree))
+                      (enumerate-tree (cdr tree))))))
+
+(define (count-leaves t)
+  (accumulate + 0 (map (lambda (x) 1) (enumerate-tree t))))
+
+(count-leaves (list 1 2 3 (list 4 5 6 (list 7 8) 9)))
+
+(count-leaves (list 1 2 3 4 5 (list 2 3 4) 2 3 4))
+
+(define (accumulate-n op init seqs)
+  (if (null? (car seqs))
+      '()
+      (cons (accumulate op init (map car seqs))
+            (accumulate-n op init (map cdr seqs)))))
+
+(define s (list (list 1 2 3) (list 4 5 6) (list 7 8 9) (list 10 11 12)))
+(accumulate-n + 10 s)
+
+(define (dot-product v w)
+  (accumulate + 0 (map * v w)))
+
+(define (matrix-*-vector m v)
+  (map (lambda (y) (dot-product v y)) m))
+
+(define (transpose m)
+  (accumulate-n cons '() m))
+
+(define (matrix-*-matrix m n)
+  (let ((cols (transpose n)))
+    (map (lambda (rows) (matrix-*-vector cols rows)) m)))
+
+(define mat (list (list 1 2 3 4) (list 4 5 6 6) (list 6 7 8 9)))
+(define v (list 1 2 3 1))
+
+(matrix-*-vector mat v)
+(transpose mat)
+
+(define mat2 (list (list 1 0 0 ) (list 0 2 0 ) (list  0 3 0) (list 0 0 4)))
+
+(matrix-*-matrix mat (transpose mat))
+(matrix-*-matrix mat2 mat)
+
+(define (fold-left op initial sequence)
+  (define (iter result rest)
+    (if (null? rest)
+        result
+        (iter (op result (car rest))
+              (cdr rest))))
+  (iter initial sequence))
+
+(accumulate + 1 (list 1 2 3))
+(fold-left + 1 (list 1 2 3))
+(accumulate list '() (list 1 2 3))
+(fold-left list '() (list 1 2 3))
+
+(define (rev-right sequence)
+  (accumulate (lambda (x y) (append y (list x))) '() sequence))
+(rev-right (list 1 2 3 4 5))
+
+(define (rev-left sequence)
+  (fold-left (lambda (x y) (cons y x)) '() sequence))
+
+(rev-left (list 1 2 3 4 5))
